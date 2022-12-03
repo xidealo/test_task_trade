@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 
-class GetQuotesUseCase(private val quoteRepository: QuoteRepository) {
+class SubscribeOnQuotesUseCase(private val quoteRepository: QuoteRepository) {
     operator fun invoke(): Flow<List<Quote>> {
         return quoteRepository.subscribeOnQuotes().map {
             it.map { quoteServer ->

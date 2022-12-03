@@ -3,7 +3,8 @@ package com.example.test_task
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.test_task.domain.GetQuotesUseCase
+import com.example.test_task.domain.SubscribeOnQuotesUseCase
+import com.example.test_task.domain.UnsubscribeFromQuotesUseCase
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,7 +38,8 @@ data class QuotesViewState(
 }
 
 class QuotesViewModel(
-    private val getQuotesUseCase: GetQuotesUseCase
+    private val subscribeOnQuotesUseCase: SubscribeOnQuotesUseCase,
+    private val unsubscribeFromQuotesUseCase: UnsubscribeFromQuotesUseCase
 ) : ViewModel() {
 
     private val mutableState: MutableStateFlow<QuotesViewState> =
@@ -48,25 +50,21 @@ class QuotesViewModel(
         mutableState.update { state ->
             state.copy(
                 error = QuotesViewState.Error(throwable) {
-                    loadData()
+                    startCheckQuotes()
                 },
                 isLoading = false
             )
         }
     }
 
-    init {
-        loadData()
-    }
-
-    private fun loadData() {
+    fun startCheckQuotes() {
         mutableState.update { state ->
             state.copy(
                 isLoading = true, error = null
             )
         }
         viewModelScope.launch(exceptionHandler) {
-            getQuotesUseCase().onEach { quotes ->
+            subscribeOnQuotesUseCase().onEach { quotes ->
                 mutableState.update { state ->
                     state.copy(
                         quotes = quotes,
@@ -79,4 +77,9 @@ class QuotesViewModel(
         }
     }
 
+    fun stopCheckQuotes() {
+        viewModelScope.launch(exceptionHandler) {
+            unsubscribeFromQuotesUseCase()
+        }
+    }
 }

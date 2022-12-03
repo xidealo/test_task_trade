@@ -2,7 +2,8 @@ package com.example.test_task.di
 
 import com.example.test_task.QuotesViewModel
 import com.example.test_task.data.QuoteRepository
-import com.example.test_task.domain.GetQuotesUseCase
+import com.example.test_task.domain.SubscribeOnQuotesUseCase
+import com.example.test_task.domain.UnsubscribeFromQuotesUseCase
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.websocket.*
@@ -25,13 +26,21 @@ fun initKoin(appDeclaration: KoinAppDeclaration = {}) = startKoin {
 
 fun viewModelModule() = module {
     viewModel {
-        QuotesViewModel(getQuotesUseCase = get())
+        QuotesViewModel(
+            subscribeOnQuotesUseCase = get(),
+            unsubscribeFromQuotesUseCase = get()
+        )
     }
 }
 
 internal fun useCaseModule() = module {
-    single {
-        GetQuotesUseCase(
+    factory {
+        SubscribeOnQuotesUseCase(
+            quoteRepository = get(),
+        )
+    }
+    factory {
+        UnsubscribeFromQuotesUseCase(
             quoteRepository = get(),
         )
     }
@@ -56,7 +65,7 @@ fun networkModule() = module {
     single {
         HttpClient(OkHttp) {
 
-            install(WebSockets){
+            install(WebSockets) {
                 contentConverter = KotlinxWebsocketSerializationConverter(Json)
             }
         }

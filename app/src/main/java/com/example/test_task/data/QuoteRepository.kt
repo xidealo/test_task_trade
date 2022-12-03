@@ -54,6 +54,8 @@ class QuoteRepository(
 
     private val quotasMap: MutableMap<String, QuoteServer> = mutableMapOf()
 
+    private var webSocketSession: DefaultClientWebSocketSession? = null
+
     fun subscribeOnQuotes(): Flow<List<QuoteServer>> {
 
         return channelFlow {
@@ -67,6 +69,8 @@ class QuoteRepository(
                         channel.send((quotasMap.values.toList()))
                     }
                 }
+
+                webSocketSession = this
 
                 while (true) {
                     val message = incoming.receive() as? Frame.Text ?: continue
@@ -90,4 +94,10 @@ class QuoteRepository(
         serverModel.ticker.isNotEmpty()
 
 
+    suspend fun unsubscribeOnOrderUpdates() {
+        if (webSocketSession != null) {
+            webSocketSession?.close(CloseReason(CloseReason.Codes.NORMAL, "User logout"))
+            webSocketSession = null
+        }
+    }
 }

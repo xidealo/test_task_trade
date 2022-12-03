@@ -1,6 +1,7 @@
 package com.example.test_task
 
-import com.example.test_task.domain.GetQuotesUseCase
+import com.example.test_task.domain.SubscribeOnQuotesUseCase
+import com.example.test_task.domain.UnsubscribeFromQuotesUseCase
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.impl.annotations.MockK
@@ -17,11 +18,15 @@ import org.junit.Before
 class QuotesViewModelTest {
 
     @MockK
-    private lateinit var getQuotesUseCase: GetQuotesUseCase
+    private lateinit var subscribeOnQuotesUseCase: SubscribeOnQuotesUseCase
+
+    @MockK
+    private lateinit var unsubscribeFromQuotesUseCase: UnsubscribeFromQuotesUseCase
 
     private val viewModel: QuotesViewModel by lazy {
         QuotesViewModel(
-            getQuotesUseCase = getQuotesUseCase
+            subscribeOnQuotesUseCase = subscribeOnQuotesUseCase,
+            unsubscribeFromQuotesUseCase = unsubscribeFromQuotesUseCase
         )
     }
 
@@ -35,7 +40,7 @@ class QuotesViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `return true when getQuotesUseCase has 1 quote`() = runTest {
-        coEvery { getQuotesUseCase() } returns flow {
+        coEvery { subscribeOnQuotesUseCase() } returns flow {
             emit(
                 listOf(
                     Quote(
@@ -49,13 +54,14 @@ class QuotesViewModelTest {
                 )
             )
         }
+        viewModel.startCheckQuotes()
         assertTrue(viewModel.state.value.quotes.size == 1)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `return false when getQuotesUseCase has 3 quotes but state got only 1`() = runTest {
-        coEvery { getQuotesUseCase() } returns flow {
+        coEvery { subscribeOnQuotesUseCase() } returns flow {
             emit(
                 listOf(
                     Quote(
@@ -85,13 +91,15 @@ class QuotesViewModelTest {
                 )
             )
         }
+        viewModel.startCheckQuotes()
         assertFalse(viewModel.state.value.quotes.size == 1)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `return true when getQuotesUseCase throws error and state has not null error`() = runTest {
-        coEvery { getQuotesUseCase() } throws  Exception("")
+        coEvery { subscribeOnQuotesUseCase() } throws Exception("")
+        viewModel.startCheckQuotes()
         assertTrue(viewModel.state.value.error != null)
     }
 
