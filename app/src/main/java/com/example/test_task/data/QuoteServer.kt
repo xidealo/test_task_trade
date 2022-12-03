@@ -9,6 +9,18 @@ data class QuoteServer(
     @SerialName("c")
     val ticker: String = "",
 
+    @SerialName("pcp")
+    val percentChangesFromLastSession: String? = null,
+
+    @SerialName("ltr")
+    val lastStock: String? = null,
+
     @SerialName("name")
-    val name: String? = null
+    val name: String? = null,
+
+    @SerialName("ltp")
+    val lastPriceDeal: String? = null,
+
+    @SerialName("chg")
+    val pointChangesFromLastSession: String? = null
 )

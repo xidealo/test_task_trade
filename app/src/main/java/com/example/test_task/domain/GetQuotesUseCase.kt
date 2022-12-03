@@ -14,9 +14,10 @@ class GetQuotesUseCase(private val quoteRepository: QuoteRepository) {
                 Quote(
                     ticker = quoteServer.ticker,
                     name = quoteServer.name,
-                    percentChanges = "",
-                    lastStock = "",
-                    lastPriceDeal = "",
+                    percentChangesFromLastSession = quoteServer.percentChangesFromLastSession,
+                    lastStock = quoteServer.lastStock,
+                    lastPriceDeal = quoteServer.lastPriceDeal,
+                    pointChangesFromLastSession = quoteServer.pointChangesFromLastSession
                 )
             }
         }.flowOn(Dispatchers.Default)
