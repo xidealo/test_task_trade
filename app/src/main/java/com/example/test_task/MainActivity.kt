@@ -7,21 +7,22 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.test_task.ui.Shimmer
 import com.example.test_task.ui.theme.Test_taskTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -81,15 +83,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun QuotesScreen(quotesViewState: QuotesViewState) {
         if (quotesViewState.isLoading) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                CircularProgressIndicator(
-                    color = Color.Magenta,
-                    strokeWidth = 4.dp,
-                )
-            }
+            LoadingScreen()
         } else {
             if (quotesViewState.error == null) {
                 QuotesList(quotesViewState)
@@ -97,7 +91,7 @@ class MainActivity : ComponentActivity() {
                 ErrorScreen(
                     textId = R.string.title_error,
                     action = {
-                        quotesViewState.error?.errorAction?.invoke()
+                        quotesViewState.error.errorAction?.invoke()
                     }
                 )
             }
@@ -105,9 +99,64 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
+    fun LoadingScreen() {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            repeat(20) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .padding(4.dp)
+                    ) {
+                        Shimmer(modifier = Modifier.size(24.dp))
+                        Shimmer(
+                            modifier = Modifier
+                                .padding(start = 4.dp)
+                                .width(60.dp)
+                                .height(26.dp)
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Shimmer(
+                            modifier = Modifier
+                                .width(56.dp)
+                                .height(30.dp)
+                        )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .padding(4.dp)
+                    ) {
+                        Shimmer(
+                            modifier = Modifier
+                                .width(92.dp)
+                                .height(16.dp)
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Shimmer(
+                            modifier = Modifier
+                                .width(72.dp)
+                                .height(16.dp)
+                        )
+                    }
+                    Divider(
+                        modifier = Modifier
+                            .padding(),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        thickness = 2.dp
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
     fun QuotesList(quotesViewState: QuotesViewState) {
         LazyColumn() {
-            items(quotesViewState.quotes) { quote ->
+            items(
+                quotesViewState.quotes,
+                key = {
+                    it.ticker
+                }
+            ) { quote ->
                 Column(modifier = Modifier
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -115,23 +164,27 @@ class MainActivity : ComponentActivity() {
                     ) {
 
                     }
-                    .padding(top = 4.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                        ) {
                             Row {
                                 AsyncImage(
                                     modifier = Modifier
-                                        .size(24.dp),
+                                        .sizeIn(maxWidth = 24.dp, maxHeight = 24.dp),
                                     model = "$LOADING_IMAGE_LINK${quote.ticker.lowercase()}",
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
                                 )
                                 Text(
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier
+                                        .padding(start = 4.dp)
+                                        .weight(1f),
                                     text = quote.ticker,
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.onBackground
