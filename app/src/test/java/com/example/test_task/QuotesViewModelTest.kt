@@ -48,8 +48,10 @@ class QuotesViewModelTest {
                         percentChangesFromLastSession = "",
                         lastStock = "",
                         name = "",
-                        lastPriceDeal = "",
+                        lastPriceDeal = 1.0,
                         pointChangesFromLastSession = "",
+                        isPositivePrice = true,
+                        isPositiveDynamic = true
                     )
                 )
             )
@@ -69,24 +71,30 @@ class QuotesViewModelTest {
                         percentChangesFromLastSession = "",
                         lastStock = "",
                         name = "",
-                        lastPriceDeal = "",
+                        lastPriceDeal = 1.0,
                         pointChangesFromLastSession = "",
+                        isPositivePrice = true,
+                        isPositiveDynamic = true
                     ),
                     Quote(
                         ticker = "1",
                         percentChangesFromLastSession = "",
                         lastStock = "",
                         name = "",
-                        lastPriceDeal = "",
+                        lastPriceDeal = 1.0,
                         pointChangesFromLastSession = "",
+                        isPositivePrice = true,
+                        isPositiveDynamic = true
                     ),
                     Quote(
                         ticker = "1",
                         percentChangesFromLastSession = "",
                         lastStock = "",
                         name = "",
-                        lastPriceDeal = "",
+                        lastPriceDeal = 1.0,
                         pointChangesFromLastSession = "",
+                        isPositivePrice = true,
+                        isPositiveDynamic = true
                     ),
                 )
             )
