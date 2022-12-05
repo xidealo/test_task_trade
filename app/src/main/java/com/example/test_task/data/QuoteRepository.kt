@@ -52,6 +52,7 @@ class QuoteRepository(
             "MGGT.EU",
             "SGGD.EU"
         )
+        private const val COMMAND = "realtimeQuotes"
     }
 
     private val quotasMap: MutableMap<String, QuoteServer> = mutableMapOf()
@@ -65,7 +66,7 @@ class QuoteRepository(
             ) {
                 launch(Dispatchers.IO) {
                     while (true) {
-                        send("[\"realtimeQuotes\", [${TICKERS.joinToString { "\"$it\"" }}]]")
+                        send("[\"$COMMAND\", [${TICKERS.joinToString { "\"$it\"" }}]]")
                         delay(1000)
                         channel.send((quotasMap.values.toList()))
                     }
