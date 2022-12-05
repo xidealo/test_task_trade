@@ -355,7 +355,27 @@ class MainActivity : ComponentActivity() {
                             name = "name",
                             lastPriceDeal = 1.1,
                             pointChangesFromLastSession = "+34.2",
-                            isPositivePrice = true
+                            isPositivePrice = true,
+                        ),
+                        Quote(
+                            ticker = "ticker1",
+                            percentChangesFromLastSession = "percentChanges",
+                            lastStock = "lastStock",
+                            name = "name",
+                            lastPriceDeal = 1.1,
+                            pointChangesFromLastSession = "+34.2",
+                            isPositivePrice = true,
+                            isPositiveDynamic = true
+                        ),
+                        Quote(
+                            ticker = "ticker2",
+                            percentChangesFromLastSession = "percentChanges",
+                            lastStock = "lastStock",
+                            name = "name",
+                            lastPriceDeal = 1.1,
+                            pointChangesFromLastSession = "+34.2",
+                            isPositivePrice = true,
+                            isPositiveDynamic = false
                         )
                     )
                 )
