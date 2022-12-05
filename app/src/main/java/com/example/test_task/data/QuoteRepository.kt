@@ -54,7 +54,6 @@ class QuoteRepository(
         )
     }
 
-
     private val quotasMap: MutableMap<String, QuoteServer> = mutableMapOf()
 
     private var webSocketSession: DefaultClientWebSocketSession? = null
@@ -66,7 +65,7 @@ class QuoteRepository(
             ) {
                 launch(Dispatchers.IO) {
                     while (true) {
-                        send("[\"quotes\", [${TICKERS.joinToString { "\"$it\"" }}]]")
+                        send("[\"realtimeQuotes\", [${TICKERS.joinToString { "\"$it\"" }}]]")
                         delay(1000)
                         channel.send((quotasMap.values.toList()))
                     }
@@ -79,11 +78,26 @@ class QuoteRepository(
                     Log.d("WEB_SOCKET_TAG", "Message: ${message.readText()}")
 
                     val serverModel = json.decodeFromJsonElement<QuoteServer>(
-                        json.decodeFromString(JsonElement.serializer(), message.readText()).jsonArray.last()
+                        json.decodeFromString(
+                            JsonElement.serializer(),
+                            message.readText()
+                        ).jsonArray.last()
                     )
 
                     if (isParsed(serverModel)) {
-                        quotasMap[serverModel.ticker] = serverModel
+                        quotasMap[serverModel.ticker] = serverModel.copy(
+                            ticker = serverModel.ticker,
+                            percentChangesFromLastSession = serverModel.percentChangesFromLastSession
+                                ?: quotasMap[serverModel.ticker]?.percentChangesFromLastSession,
+                            lastStock = serverModel.lastStock
+                                ?: quotasMap[serverModel.ticker]?.lastStock,
+                            name = serverModel.name
+                                ?: quotasMap[serverModel.ticker]?.name,
+                            lastPriceDeal = serverModel.lastPriceDeal
+                                ?: quotasMap[serverModel.ticker]?.lastPriceDeal,
+                            pointChangesFromLastSession = serverModel.pointChangesFromLastSession
+                                ?: quotasMap[serverModel.ticker]?.pointChangesFromLastSession,
+                        )
                     }
                 }
             }

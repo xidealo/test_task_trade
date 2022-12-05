@@ -9,17 +9,19 @@ import kotlinx.coroutines.flow.map
 
 class SubscribeOnQuotesUseCase(private val quoteRepository: QuoteRepository) {
     operator fun invoke(): Flow<List<Quote>> {
-        return quoteRepository.subscribeOnQuotes().map {
-            it.map { quoteServer ->
+        return quoteRepository.subscribeOnQuotes().map { serverQuote ->
+            serverQuote.map { quoteServer ->
                 Quote(
                     ticker = quoteServer.ticker,
                     name = quoteServer.name,
-                    percentChangesFromLastSession = quoteServer.percentChangesFromLastSession,
+                    percentChangesFromLastSession = quoteServer.percentChangesFromLastSession.toString(),
                     lastStock = quoteServer.lastStock,
                     lastPriceDeal = quoteServer.lastPriceDeal,
-                    pointChangesFromLastSession = quoteServer.pointChangesFromLastSession
+                    pointChangesFromLastSession = quoteServer.pointChangesFromLastSession.toString(),
+                    isPositivePrice = (quoteServer.percentChangesFromLastSession ?: 0.0) > 0,
                 )
             }
         }.flowOn(Dispatchers.Default)
     }
+
 }

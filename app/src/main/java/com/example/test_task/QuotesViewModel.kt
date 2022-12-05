@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.test_task.domain.SubscribeOnQuotesUseCase
 import com.example.test_task.domain.UnsubscribeFromQuotesUseCase
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,13 +15,16 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+
 data class Quote(
     val ticker: String,
     val percentChangesFromLastSession: String?,
     val lastStock: String?,
     val name: String?,
-    val lastPriceDeal: String?,
+    val lastPriceDeal: Double?,
+    val isPositiveDynamic: Boolean? = null,
     val pointChangesFromLastSession: String?,
+    val isPositivePrice: Boolean
 )
 
 data class QuotesViewState(
@@ -67,7 +71,18 @@ class QuotesViewModel(
             subscribeOnQuotesUseCase().onEach { quotes ->
                 mutableState.update { state ->
                     state.copy(
-                        quotes = quotes,
+                        quotes = quotes.map { quote ->
+                            quote.copy(
+                                isPositiveDynamic = state.quotes.find { it.ticker == quote.ticker }.let { storedValue ->
+                                    if (storedValue?.lastPriceDeal == null || quote.lastPriceDeal == null) {
+                                        null
+                                    } else {
+                                        if (quote.lastPriceDeal == storedValue.lastPriceDeal) null
+                                        else quote.lastPriceDeal > storedValue.lastPriceDeal
+                                    }
+                                },
+                            )
+                        },
                         isLoading = false,
                         error = null
                     )
