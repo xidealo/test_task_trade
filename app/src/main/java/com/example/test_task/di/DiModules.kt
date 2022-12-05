@@ -47,7 +47,7 @@ internal fun useCaseModule() = module {
 }
 
 internal fun dataModule() = module {
-    single {
+    factory {
         QuoteRepository(
             client = get(),
             json = get(),

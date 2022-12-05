@@ -6,7 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.test_task.domain.SubscribeOnQuotesUseCase
 import com.example.test_task.domain.UnsubscribeFromQuotesUseCase
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.channels.ticker
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,37 +51,44 @@ class QuotesViewModel(
         MutableStateFlow(QuotesViewState())
     val state: StateFlow<QuotesViewState> = mutableState.asStateFlow()
 
+    private var job: Job? = null
+
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-        mutableState.update { state ->
-            state.copy(
-                error = QuotesViewState.Error(throwable) {
-                    startCheckQuotes()
-                },
-                isLoading = false
-            )
+        if (throwable is ClosedReceiveChannelException) {
+            job?.cancel()
+        } else {
+            mutableState.update { state ->
+                state.copy(
+                    error = QuotesViewState.Error(throwable) {
+                        startCheckQuotes()
+                    },
+                    isLoading = false
+                )
+            }
         }
     }
-
     fun startCheckQuotes() {
         mutableState.update { state ->
             state.copy(
-                isLoading = true, error = null
+                isLoading = true,
+                error = null
             )
         }
-        viewModelScope.launch(exceptionHandler) {
+        job = viewModelScope.launch(exceptionHandler) {
             subscribeOnQuotesUseCase().onEach { quotes ->
                 mutableState.update { state ->
                     state.copy(
                         quotes = quotes.map { quote ->
                             quote.copy(
-                                isPositiveDynamic = state.quotes.find { it.ticker == quote.ticker }.let { storedValue ->
-                                    if (storedValue?.lastPriceDeal == null || quote.lastPriceDeal == null) {
-                                        null
-                                    } else {
-                                        if (quote.lastPriceDeal == storedValue.lastPriceDeal) null
-                                        else quote.lastPriceDeal > storedValue.lastPriceDeal
-                                    }
-                                },
+                                isPositiveDynamic = state.quotes.find { it.ticker == quote.ticker }
+                                    .let { storedValue ->
+                                        if (storedValue?.lastPriceDeal == null || quote.lastPriceDeal == null) {
+                                            null
+                                        } else {
+                                            if (quote.lastPriceDeal == storedValue.lastPriceDeal) null
+                                            else quote.lastPriceDeal > storedValue.lastPriceDeal
+                                        }
+                                    },
                             )
                         },
                         isLoading = false,
@@ -93,7 +101,8 @@ class QuotesViewModel(
     }
 
     fun stopCheckQuotes() {
-        viewModelScope.launch(exceptionHandler) {
+        viewModelScope.launch() {
+            job?.cancel()
             unsubscribeFromQuotesUseCase()
         }
     }

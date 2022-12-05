@@ -8,6 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -20,6 +22,7 @@ class QuoteRepository(
     val json: Json
 ) {
     companion object {
+        private val HOST = "wss.tradernet.ru"
         private val TICKERS = listOf(
             "RSTI",
             "GAZP",
@@ -62,17 +65,17 @@ class QuoteRepository(
     fun subscribeOnQuotes(): Flow<List<QuoteServer>> {
         return channelFlow {
             client.wss(
-                host = "wss.tradernet.ru",
+                host = HOST,
             ) {
-                launch(Dispatchers.IO) {
+                webSocketSession = this
+
+                launch {
                     while (true) {
                         send("[\"$COMMAND\", [${TICKERS.joinToString { "\"$it\"" }}]]")
-                        delay(1000)
+                        delay(2000)
                         channel.send((quotasMap.values.toList()))
                     }
                 }
-
-                webSocketSession = this
 
                 while (true) {
                     val message = incoming.receive() as? Frame.Text ?: continue
@@ -102,14 +105,15 @@ class QuoteRepository(
                     }
                 }
             }
-        }
+        }.flowOn(Dispatchers.IO)
     }
 
     private fun isParsed(serverModel: QuoteServer) =
         serverModel.ticker.isNotEmpty()
 
+    //Есть вопрос
     suspend fun unsubscribeOnOrderUpdates() {
-        if (webSocketSession != null) {
+        webSocketSession?.let {
             webSocketSession?.close(CloseReason(CloseReason.Codes.NORMAL, "User logout"))
             webSocketSession = null
         }
