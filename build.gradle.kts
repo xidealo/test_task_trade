@@ -11,11 +11,7 @@ buildscript {
     dependencies {
         classpath(ClassPath.gradle)
         classpath(ClassPath.kotlinGradlePlugin)
-        classpath(ClassPath.googleServices)
         classpath(ClassPath.kotlinSerialization)
-        classpath(ClassPath.firebaseCrashlyticsGradle)
-        classpath(ClassPath.navigationSafeArgs)
-        classpath(ClassPath.sqlDelight)
     }
 }
 
