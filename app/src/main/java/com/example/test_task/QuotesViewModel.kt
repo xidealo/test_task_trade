@@ -16,17 +16,20 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-
 data class Quote(
     val ticker: String,
     val percentChangesFromLastSession: String?,
     val lastStock: String?,
     val name: String?,
     val lastPriceDeal: Double?,
-    val isPositiveDynamic: Boolean? = null,
+    val priceDynamic: PriceDynamic,
     val pointChangesFromLastSession: String?,
-    val isPositivePrice: Boolean
-)
+    val isPositivePrice: Boolean?
+) {
+    enum class PriceDynamic {
+        POSITIVE, NEGATIVE, STABLE
+    }
+}
 
 data class QuotesViewState(
     val quotes: List<Quote> = emptyList(),
@@ -67,35 +70,61 @@ class QuotesViewModel(
             }
         }
     }
-    fun startCheckQuotes() {
+
+    init {
         mutableState.update { state ->
             state.copy(
                 isLoading = true,
                 error = null
             )
         }
+    }
+
+    fun startCheckQuotes() {
         job = viewModelScope.launch(exceptionHandler) {
-            subscribeOnQuotesUseCase().onEach { quotes ->
-                mutableState.update { state ->
-                    state.copy(
-                        quotes = quotes.map { quote ->
-                            quote.copy(
-                                isPositiveDynamic = state.quotes.find { it.ticker == quote.ticker }
-                                    .let { storedValue ->
-                                        if (storedValue?.lastPriceDeal == null || quote.lastPriceDeal == null) {
-                                            null
-                                        } else {
-                                            if (quote.lastPriceDeal == storedValue.lastPriceDeal) null
-                                            else quote.lastPriceDeal > storedValue.lastPriceDeal
-                                        }
-                                    },
-                            )
-                        },
-                        isLoading = false,
-                        error = null
-                    )
-                }
-                Log.d("VM_TAG", "${state.value}")
+            subscribeOnQuotesUseCase().onEach { quote ->
+
+                val tickerOnView = mutableState.value.quotes.find { it.ticker == quote.ticker }
+
+                val priceDynamic =
+                    if (tickerOnView?.lastPriceDeal == null || quote.lastPriceDeal == null) {
+                        Quote.PriceDynamic.STABLE
+                    } else {
+                        if (quote.lastPriceDeal == tickerOnView.lastPriceDeal) Quote.PriceDynamic.STABLE
+                        else if (quote.lastPriceDeal > tickerOnView.lastPriceDeal) Quote.PriceDynamic.POSITIVE
+                        else Quote.PriceDynamic.NEGATIVE
+                    }
+
+                    mutableState.update { state ->
+                        state.copy(
+                            quotes = state.quotes
+                                .toMutableList()
+                                .apply {
+                                    if (find { it.ticker == quote.ticker } == null) {
+                                        add(quote)
+                                    }
+                                }.map {
+                                    if (it.ticker == quote.ticker) {
+                                        quote.copy(
+                                            ticker = quote.ticker,
+                                            percentChangesFromLastSession = quote.percentChangesFromLastSession
+                                                ?: tickerOnView?.percentChangesFromLastSession,
+                                            lastStock = quote.lastStock ?: tickerOnView?.lastStock,
+                                            name = quote.name ?: tickerOnView?.name,
+                                            lastPriceDeal = quote.lastPriceDeal
+                                                ?: tickerOnView?.lastPriceDeal,
+                                            priceDynamic = priceDynamic,
+                                            pointChangesFromLastSession = quote.pointChangesFromLastSession
+                                                ?: tickerOnView?.pointChangesFromLastSession,
+                                            isPositivePrice = quote.isPositivePrice ?: tickerOnView?.isPositivePrice,
+                                        )
+                                    } else it
+                                },
+                            isLoading = false,
+                            error = null
+                        )
+                    }
+                    Log.d("VM_TAG", "${state.value}")
             }.collect()
         }
     }

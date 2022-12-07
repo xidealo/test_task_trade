@@ -58,24 +58,16 @@ class QuoteRepository(
         private const val COMMAND = "realtimeQuotes"
     }
 
-    private val quotasMap: MutableMap<String, QuoteServer> = mutableMapOf()
-
     private var webSocketSession: DefaultClientWebSocketSession? = null
 
-    fun subscribeOnQuotes(): Flow<List<QuoteServer>> {
-        return channelFlow {
+    fun subscribeOnQuotes(): Flow<QuoteServer> {
+        return flow {
             client.wss(
                 host = HOST,
             ) {
                 webSocketSession = this
 
-                launch {
-                    while (true) {
-                        send("[\"$COMMAND\", [${TICKERS.joinToString { "\"$it\"" }}]]")
-                        delay(2000)
-                        channel.send((quotasMap.values.toList()))
-                    }
-                }
+                send("[\"$COMMAND\", [${TICKERS.joinToString { "\"$it\"" }}]]")
 
                 while (true) {
                     val message = incoming.receive() as? Frame.Text ?: continue
@@ -89,19 +81,7 @@ class QuoteRepository(
                     )
 
                     if (isParsed(serverModel)) {
-                        quotasMap[serverModel.ticker] = serverModel.copy(
-                            ticker = serverModel.ticker,
-                            percentChangesFromLastSession = serverModel.percentChangesFromLastSession
-                                ?: quotasMap[serverModel.ticker]?.percentChangesFromLastSession,
-                            lastStock = serverModel.lastStock
-                                ?: quotasMap[serverModel.ticker]?.lastStock,
-                            name = serverModel.name
-                                ?: quotasMap[serverModel.ticker]?.name,
-                            lastPriceDeal = serverModel.lastPriceDeal
-                                ?: quotasMap[serverModel.ticker]?.lastPriceDeal,
-                            pointChangesFromLastSession = serverModel.pointChangesFromLastSession
-                                ?: quotasMap[serverModel.ticker]?.pointChangesFromLastSession,
-                        )
+                        emit(serverModel)
                     }
                 }
             }

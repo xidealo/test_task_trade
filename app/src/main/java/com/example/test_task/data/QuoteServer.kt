@@ -23,4 +23,7 @@ data class QuoteServer(
 
     @SerialName("chg")
     val pointChangesFromLastSession: Double? = null,
+
+    @SerialName("min_step")
+    val minStep: Double? = null,
 )

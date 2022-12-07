@@ -33,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,7 +46,9 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.drawable.toBitmap
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
 import com.example.test_task.ui.Shimmer
 import com.example.test_task.ui.theme.Test_taskTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -132,7 +135,10 @@ class MainActivity : ComponentActivity() {
                                 .width(92.dp)
                                 .height(16.dp)
                         )
-                        Spacer(modifier = Modifier.weight(1f))
+                        Spacer(
+                            modifier = Modifier
+                                .weight(1f)
+                        )
                         Shimmer(
                             modifier = Modifier
                                 .width(72.dp)
@@ -141,7 +147,8 @@ class MainActivity : ComponentActivity() {
                     }
                     Divider(
                         modifier = Modifier
-                            .padding(),
+                            .padding(start = 8.dp)
+                            .padding(top = 2.dp),
                         color = MaterialTheme.colorScheme.outlineVariant,
                         thickness = 2.dp
                     )
@@ -152,6 +159,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun QuotesList(quotesViewState: QuotesViewState) {
+
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(
                 quotesViewState.quotes,
@@ -159,6 +167,9 @@ class MainActivity : ComponentActivity() {
                     it.ticker
                 }
             ) { quote ->
+
+                val hasIcon = remember { mutableStateOf(true) }
+
                 Column(modifier = Modifier
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -175,17 +186,23 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .weight(1f)
                         ) {
-                            Row {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 AsyncImage(
                                     modifier = Modifier
-                                        .sizeIn(maxWidth = 24.dp, maxHeight = 24.dp),
+                                        .sizeIn(maxWidth = 24.dp, maxHeight = 24.dp)
+                                        .padding(end = if (hasIcon.value) 4.dp else 0.dp),
                                     model = "$LOADING_IMAGE_LINK${quote.ticker.lowercase()}",
                                     contentDescription = null,
-                                    contentScale = ContentScale.Crop,
+                                    onState = {
+                                        if ((it as? AsyncImagePainter.State.Success)?.result?.drawable?.toBitmap()?.height == 1) {
+                                            hasIcon.value = false
+                                        }
+                                    }
                                 )
                                 Text(
                                     modifier = Modifier
-                                        .padding(start = 4.dp)
                                         .weight(1f),
                                     text = quote.ticker,
                                     style = MaterialTheme.typography.titleMedium,
@@ -193,12 +210,12 @@ class MainActivity : ComponentActivity() {
                                 )
                                 //можно ли сделать 1 Crossfade?
                                 Crossfade(
-                                    targetState = when (quote.isPositiveDynamic) {
-                                        true -> Color(0xFF71bd41)
-                                        false -> Color(0xFFfc2c54)
-                                        null -> Color.White
+                                    targetState = when (quote.priceDynamic) {
+                                        Quote.PriceDynamic.POSITIVE -> Color(0xFF71bd41)
+                                        Quote.PriceDynamic.NEGATIVE -> Color(0xFFfc2c54)
+                                        else -> Color.White
                                     },
-                                    animationSpec = tween(400)
+                                    animationSpec = tween(200)
                                 ) { selectedColor ->
                                     Box(
                                         modifier = Modifier
@@ -206,25 +223,25 @@ class MainActivity : ComponentActivity() {
                                             .background(selectedColor),
                                     ) {
                                         Crossfade(
-                                            targetState = when (quote.isPositiveDynamic) {
-                                                true -> Color.White
-                                                false -> Color.White
-                                                null -> if (quote.isPositivePrice) {
+                                            targetState = when (quote.priceDynamic) {
+                                                Quote.PriceDynamic.POSITIVE -> Color.White
+                                                Quote.PriceDynamic.NEGATIVE -> Color.White
+                                                else -> if (quote.isPositivePrice == true) {
                                                     Color(0xFF71bd41)
                                                 } else {
                                                     Color(0xFFfc2c54)
                                                 }
                                             },
-                                            animationSpec = tween(400)
+                                            animationSpec = tween(200)
                                         ) { selectedTextColor ->
                                             quote.percentChangesFromLastSession?.let {
                                                 Text(
                                                     modifier = Modifier
                                                         .padding(4.dp),
-                                                    text = if (quote.isPositivePrice) {
-                                                        "+${quote.percentChangesFromLastSession}"
+                                                    text = if (quote.isPositivePrice == true) {
+                                                        "+${quote.percentChangesFromLastSession}%"
                                                     } else {
-                                                        quote.percentChangesFromLastSession
+                                                        "${quote.percentChangesFromLastSession}%"
                                                     },
                                                     color = selectedTextColor
                                                 )
@@ -260,20 +277,20 @@ class MainActivity : ComponentActivity() {
                                     Text(
                                         text = "${quote.lastPriceDeal}",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.outline
+                                        color = MaterialTheme.colorScheme.onBackground
                                     )
                                 }
 
                                 quote.pointChangesFromLastSession?.let {
                                     Text(
                                         modifier = Modifier.padding(start = 4.dp),
-                                        text = if (quote.isPositivePrice) {
+                                        text = if (quote.isPositivePrice == true) {
                                             "( +${quote.pointChangesFromLastSession} )"
                                         } else {
                                             "( ${quote.pointChangesFromLastSession} )"
                                         },
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.outline
+                                        color = MaterialTheme.colorScheme.onBackground
                                     )
                                 }
                             }
@@ -288,9 +305,10 @@ class MainActivity : ComponentActivity() {
                     }
                     Divider(
                         modifier = Modifier
-                            .padding(),
+                            .padding(start = 8.dp)
+                            .padding(top = 2.dp),
                         color = MaterialTheme.colorScheme.outlineVariant,
-                        thickness = 2.dp
+                        thickness = 1.dp
                     )
                 }
             }
@@ -351,6 +369,7 @@ class MainActivity : ComponentActivity() {
                             lastPriceDeal = 1.1,
                             pointChangesFromLastSession = "+34.2",
                             isPositivePrice = true,
+                            priceDynamic = Quote.PriceDynamic.STABLE
                         ),
                         Quote(
                             ticker = "ticker1",
@@ -360,7 +379,7 @@ class MainActivity : ComponentActivity() {
                             lastPriceDeal = 1.1,
                             pointChangesFromLastSession = "+34.2",
                             isPositivePrice = true,
-                            isPositiveDynamic = true
+                            priceDynamic = Quote.PriceDynamic.POSITIVE
                         ),
                         Quote(
                             ticker = "ticker2",
@@ -370,7 +389,7 @@ class MainActivity : ComponentActivity() {
                             lastPriceDeal = 1.1,
                             pointChangesFromLastSession = "+34.2",
                             isPositivePrice = true,
-                            isPositiveDynamic = false
+                            priceDynamic = Quote.PriceDynamic.NEGATIVE
                         )
                     )
                 )
