@@ -42,18 +42,17 @@ class QuotesViewModelTest {
     fun `return true when getQuotesUseCase has 1 quote`() = runTest {
         coEvery { subscribeOnQuotesUseCase() } returns flow {
             emit(
-                listOf(
-                    Quote(
-                        ticker = "1",
-                        percentChangesFromLastSession = "",
-                        lastStock = "",
-                        name = "",
-                        lastPriceDeal = 1.0,
-                        pointChangesFromLastSession = "",
-                        isPositivePrice = true,
-                        isPositiveDynamic = true
+                Quote(
+                    ticker = "1",
+                    percentChangesFromLastSession = "",
+                    lastStock = "",
+                    name = "",
+                    lastPriceDeal = 1.0,
+                    pointChangesFromLastSession = "",
+                    isPositivePrice = true,
+                    priceDynamic = Quote.PriceDynamic.POSITIVE,
+
                     )
-                )
             )
         }
         viewModel.startCheckQuotes()
@@ -65,38 +64,44 @@ class QuotesViewModelTest {
     fun `return false when getQuotesUseCase has 3 quotes but state got only 1`() = runTest {
         coEvery { subscribeOnQuotesUseCase() } returns flow {
             emit(
-                listOf(
-                    Quote(
-                        ticker = "1",
-                        percentChangesFromLastSession = "",
-                        lastStock = "",
-                        name = "",
-                        lastPriceDeal = 1.0,
-                        pointChangesFromLastSession = "",
-                        isPositivePrice = true,
-                        isPositiveDynamic = true
-                    ),
-                    Quote(
-                        ticker = "1",
-                        percentChangesFromLastSession = "",
-                        lastStock = "",
-                        name = "",
-                        lastPriceDeal = 1.0,
-                        pointChangesFromLastSession = "",
-                        isPositivePrice = true,
-                        isPositiveDynamic = true
-                    ),
-                    Quote(
-                        ticker = "1",
-                        percentChangesFromLastSession = "",
-                        lastStock = "",
-                        name = "",
-                        lastPriceDeal = 1.0,
-                        pointChangesFromLastSession = "",
-                        isPositivePrice = true,
-                        isPositiveDynamic = true
-                    ),
-                )
+
+                Quote(
+                    ticker = "1",
+                    percentChangesFromLastSession = "",
+                    lastStock = "",
+                    name = "",
+                    lastPriceDeal = 1.0,
+                    pointChangesFromLastSession = "",
+                    isPositivePrice = true,
+                    priceDynamic = Quote.PriceDynamic.POSITIVE,
+
+                    )
+            )
+            emit(
+                Quote(
+                    ticker = "1",
+                    percentChangesFromLastSession = "",
+                    lastStock = "",
+                    name = "",
+                    lastPriceDeal = 1.0,
+                    pointChangesFromLastSession = "",
+                    isPositivePrice = true,
+                    priceDynamic = Quote.PriceDynamic.POSITIVE,
+
+                    )
+            )
+            emit(
+                Quote(
+                    ticker = "1",
+                    percentChangesFromLastSession = "",
+                    lastStock = "",
+                    name = "",
+                    lastPriceDeal = 1.0,
+                    pointChangesFromLastSession = "",
+                    isPositivePrice = true,
+                    priceDynamic = Quote.PriceDynamic.POSITIVE,
+
+                    )
             )
         }
         viewModel.startCheckQuotes()
